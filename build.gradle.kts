@@ -54,6 +54,7 @@ dependencies {
     compileOnly(fg.deobf("curse.maven:selene-499980:7945711"))
     runtimeOnly(fg.deobf("curse.maven:immersive-weathering-forge-592449:6116941"))
     runtimeOnly(fg.deobf("curse.maven:selene-499980:7945711"))
+    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
 }
 
