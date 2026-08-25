@@ -1,7 +1,7 @@
 package com.bettercontent.immersiveweatheringsampler;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -12,7 +12,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 public final class ChunkExposureData {
     private static final String ROOT = "BetterContentImmersiveWeatheringSampler";
     private static final int SCHEMA = 1;
-    private static final Map<ResourceKey<Level>, Map<Long, Entry>> LOADED = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Map<Long, Entry>> LOADED = new ConcurrentHashMap<>();
 
     private ChunkExposureData() {
     }
@@ -55,7 +55,11 @@ public final class ChunkExposureData {
     }
 
     private static Map<Long, Entry> entries(final ServerLevel level) {
-        return LOADED.computeIfAbsent(level.dimension(), ignored -> new HashMap<>());
+        return entriesFor(LOADED, level.dimension());
+    }
+
+    static <K, V> Map<Long, V> entriesFor(final Map<K, Map<Long, V>> dimensions, final K key) {
+        return dimensions.computeIfAbsent(key, ignored -> new ConcurrentHashMap<>());
     }
 
     private record Entry(boolean initialized, ExposureClock clock) {

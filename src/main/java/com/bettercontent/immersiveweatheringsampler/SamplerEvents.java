@@ -1,9 +1,8 @@
 package com.bettercontent.immersiveweatheringsampler;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -15,8 +14,8 @@ import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public final class SamplerEvents {
-    private static final Map<ResourceKey<Level>, Set<Long>> PENDING = new HashMap<>();
-    private static final Map<ResourceKey<Level>, Set<Long>> DEFERRED_UNLOAD_SAVES = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Set<Long>> PENDING = new ConcurrentHashMap<>();
+    private static final Map<ResourceKey<Level>, Set<Long>> DEFERRED_UNLOAD_SAVES = new ConcurrentHashMap<>();
 
     private SamplerEvents() {
     }
@@ -83,10 +82,14 @@ public final class SamplerEvents {
     }
 
     private static Set<Long> pending(final ServerLevel level) {
-        return PENDING.computeIfAbsent(level.dimension(), ignored -> new HashSet<>());
+        return queue(PENDING, level.dimension());
     }
 
     private static Set<Long> deferred(final ServerLevel level) {
-        return DEFERRED_UNLOAD_SAVES.computeIfAbsent(level.dimension(), ignored -> new HashSet<>());
+        return queue(DEFERRED_UNLOAD_SAVES, level.dimension());
+    }
+
+    static <K> Set<Long> queue(final Map<K, Set<Long>> queues, final K key) {
+        return queues.computeIfAbsent(key, ignored -> ConcurrentHashMap.newKeySet());
     }
 }
