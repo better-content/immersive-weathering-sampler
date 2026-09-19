@@ -15,7 +15,6 @@ import com.ordana.immersive_weathering.data.block_growths.growths.builtin.Builti
 import com.ordana.immersive_weathering.reg.ModTags;
 import com.ordana.immersive_weathering.util.Weatherable;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +66,10 @@ public final class EndpointSampler {
         }
 
         collectSurfaceRules(level, chunk, elapsed, randomTickSpeed, density, actions);
-        actions.sort(Comparator.comparingLong(EndpointAction::sortKey));
+        actions.sort((first, second) -> EndpointActionOrder.compare(
+                first.pos().asLong(), first.seed(), first.discriminator(),
+                second.pos().asLong(), second.seed(), second.discriminator()
+        ));
         int applied = 0;
         for (EndpointAction action : actions) {
             if (!level.getBlockState(action.pos()).equals(action.expectedState())) continue;
@@ -96,7 +98,7 @@ public final class EndpointSampler {
             final long seed = seed(level, pos, elapsed, "rust");
             final BlockState endpoint = sampleRustEndpoint(level, pos, state, rustable, elapsed, selectionChance, density, RandomSource.create(seed));
             if (!endpoint.equals(state)) {
-                actions.add(new EndpointAction(pos, state, seed, () -> level.setBlock(pos, endpoint, 2)));
+                actions.add(new EndpointAction(pos, state, seed, "rust", () -> level.setBlock(pos, endpoint, 2)));
             }
             return;
         }
@@ -123,7 +125,7 @@ public final class EndpointSampler {
         }
         if (!endpoint.equals(state)) {
             final BlockState finalEndpoint = endpoint;
-            actions.add(new EndpointAction(pos, state, seed, () -> level.setBlock(pos, finalEndpoint, 2)));
+            actions.add(new EndpointAction(pos, state, seed, "patch", () -> level.setBlock(pos, finalEndpoint, 2)));
         }
     }
 
@@ -246,7 +248,7 @@ public final class EndpointSampler {
             final long seed = seed(level, pos, new ExposureClock(exposure, 0, 0, 0), ruleKey(rule, source));
             final RandomSource random = RandomSource.create(seed);
             if (!ProbabilityMath.occurs(random, exposure, selectionChance * growthChance * density)) continue;
-            actions.add(new EndpointAction(pos, state, seed, () -> ChanceBypass.run(
+            actions.add(new EndpointAction(pos, state, seed, ruleKey(rule, source), () -> ChanceBypass.run(
                     RandomSource.create(seed),
                     () -> rule.tryGrowing(pos, state, level, () -> level.getBiome(pos)))));
         }
@@ -290,9 +292,8 @@ public final class EndpointSampler {
         return value ^ value >>> 31;
     }
 
-    private record EndpointAction(BlockPos pos, BlockState expectedState, long seed, Runnable operation) {
-        private long sortKey() {
-            return pos.asLong() ^ seed;
-        }
+    private record EndpointAction(
+            BlockPos pos, BlockState expectedState, long seed, String discriminator, Runnable operation
+    ) {
     }
 }
