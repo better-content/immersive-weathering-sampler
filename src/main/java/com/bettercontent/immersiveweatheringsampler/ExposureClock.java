@@ -6,31 +6,42 @@ public record ExposureClock(long clearDay, long clearNight, long rainDay, long r
     public static final ExposureClock ZERO = new ExposureClock(0, 0, 0, 0);
 
     public long total() {
-        return clearDay + clearNight + rainDay + rainNight;
+        return saturatingAdd(saturatingAdd(clearDay, clearNight), saturatingAdd(rainDay, rainNight));
     }
 
     public long clear() {
-        return clearDay + clearNight;
+        return saturatingAdd(clearDay, clearNight);
     }
 
     public long rain() {
-        return rainDay + rainNight;
+        return saturatingAdd(rainDay, rainNight);
     }
 
     public ExposureClock add(final long ticks, final boolean raining, final boolean day) {
         if (ticks <= 0) return this;
-        if (raining && day) return new ExposureClock(clearDay, clearNight, rainDay + ticks, rainNight);
-        if (raining) return new ExposureClock(clearDay, clearNight, rainDay, rainNight + ticks);
-        if (day) return new ExposureClock(clearDay + ticks, clearNight, rainDay, rainNight);
-        return new ExposureClock(clearDay, clearNight + ticks, rainDay, rainNight);
+        if (raining && day) return new ExposureClock(clearDay, clearNight, saturatingAdd(rainDay, ticks), rainNight);
+        if (raining) return new ExposureClock(clearDay, clearNight, rainDay, saturatingAdd(rainNight, ticks));
+        if (day) return new ExposureClock(saturatingAdd(clearDay, ticks), clearNight, rainDay, rainNight);
+        return new ExposureClock(clearDay, saturatingAdd(clearNight, ticks), rainDay, rainNight);
     }
 
     public ExposureClock subtractClamped(final ExposureClock earlier) {
         return new ExposureClock(
-                Math.max(0, clearDay - earlier.clearDay),
-                Math.max(0, clearNight - earlier.clearNight),
-                Math.max(0, rainDay - earlier.rainDay),
-                Math.max(0, rainNight - earlier.rainNight));
+                subtractClamped(clearDay, earlier.clearDay),
+                subtractClamped(clearNight, earlier.clearNight),
+                subtractClamped(rainDay, earlier.rainDay),
+                subtractClamped(rainNight, earlier.rainNight));
+    }
+
+    private static long saturatingAdd(final long value, final long increment) {
+        if (increment <= 0) return value;
+        return value > Long.MAX_VALUE - increment ? Long.MAX_VALUE : value + increment;
+    }
+
+    private static long subtractClamped(final long value, final long earlier) {
+        if (value <= earlier) return 0;
+        if (earlier < 0 && value > Long.MAX_VALUE + earlier) return Long.MAX_VALUE;
+        return value - earlier;
     }
 
     public void save(final CompoundTag tag, final String prefix) {
@@ -48,4 +59,3 @@ public record ExposureClock(long clearDay, long clearNight, long rainDay, long r
                 tag.getLong(prefix + "RainNight"));
     }
 }
-

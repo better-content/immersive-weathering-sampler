@@ -29,6 +29,26 @@ final class ExposureClockTest {
     }
 
     @Test
+    void accumulatedExposureSaturatesInsteadOfWrappingAtLongBoundary() {
+        final ExposureClock clock = new ExposureClock(Long.MAX_VALUE - 2, 0, 0, 0)
+            .add(10, false, true);
+
+        assertEquals(Long.MAX_VALUE, clock.clearDay());
+        assertEquals(Long.MAX_VALUE, clock.total());
+    }
+
+    @Test
+    void totalSaturatesWhenSeveralValidBucketsExceedLongRange() {
+        assertEquals(Long.MAX_VALUE, new ExposureClock(Long.MAX_VALUE, 1, 0, 0).total());
+    }
+
+    @Test
+    void subtractingNegativeCorruptSnapshotCannotOverflowPositive() {
+        assertEquals(Long.MAX_VALUE, new ExposureClock(Long.MAX_VALUE, 0, 0, 0)
+            .subtractClamped(new ExposureClock(Long.MIN_VALUE, 0, 0, 0)).clearDay());
+    }
+
+    @Test
     void nbtRoundTripIsLossless() {
         final ExposureClock expected = new ExposureClock(11, 22, 33, 44);
         final CompoundTag tag = new CompoundTag();
