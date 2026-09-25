@@ -1,5 +1,6 @@
 package com.bettercontent.immersiveweatheringsampler.mixin;
 
+import com.bettercontent.immersiveweatheringsampler.ImmersiveWeatheringSampler;
 import com.ordana.immersive_weathering.dynamicpack.ServerDynamicResourcesHandler;
 import net.mehvahdjukaar.moonlight.api.resources.StaticResource;
 import net.minecraft.resources.ResourceLocation;
@@ -26,8 +27,7 @@ public abstract class LeafPileResourceMixin {
         ResourceLocation dynamicLeaf = ResourceLocation.tryParse(leafId);
         if (dynamicLeaf == null
                 || !dynamicLeaf.getNamespace().equals("dynamic_trees_hexerei")
-                || !HEXEREI_LEAVES.contains(dynamicLeaf.getPath())
-                || ForgeRegistries.ITEMS.containsKey(dynamicLeaf)) {
+                || !HEXEREI_LEAVES.contains(dynamicLeaf.getPath())) {
             return;
         }
 
@@ -35,6 +35,7 @@ public abstract class LeafPileResourceMixin {
         if (!ForgeRegistries.ITEMS.containsKey(hexereiLeaf)) {
             throw new IllegalStateException("Missing Hexerei leaf item for " + dynamicLeaf);
         }
+        ImmersiveWeatheringSampler.LOGGER.info("Using {} for Immersive Weathering leaf pile {}", hexereiLeaf, pileId);
         addLeafPileJson(resource, pileId, hexereiLeaf.toString());
         callback.cancel();
     }
