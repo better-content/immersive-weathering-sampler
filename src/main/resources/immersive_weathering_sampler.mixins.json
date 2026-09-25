@@ -8,7 +8,8 @@
     "BuiltinBlockGrowthAccessor",
     "BuiltinChanceMixin",
     "BlockGrowthHandlerAccessor",
-    "ConfigurableBlockGrowthChanceMixin"
+    "ConfigurableBlockGrowthChanceMixin",
+    "LeafPileResourceMixin"
   ],
   "injectors": {
     "defaultRequire": 0
